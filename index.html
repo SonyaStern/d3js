@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js</title>
+    <!--Подключаем коллекцию векторных иконок-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Amatic+SC:700|Oswald" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <header class="main-header">
+        <div class="header-container">Онлайн-курс по D3.JS</div>
+    </header>
+
+    <div class="row">
+
+        <div class="blocks">
+            <div class="displayb infotheory">
+                <span class="block_name">JavaScript</span>
+                <div class="infotype" id="js_editor">
+                </div>
+            </div>
+
+        </div>
+        <div class="tasks">
+            <div class="block2 example">
+                <span class="block_name">Образец</span>
+                <iframe id="example_iframe" class="iframeblock"></iframe>
+            </div>
+            <div class="block2 itog">
+                <div style="border-bottom: 2px solid #4169E1; background: #4169E1;">
+                    <button class="btn" onclick="user_result()">Результат</button>
+                    <button class="btn" onclick="show_diff()">Различия</button>
+                </div>
+                <iframe id="result_iframe" class="iframeblock" style="height: 275px;"></iframe>
+                <div id="diff_div" class="iframeblock" style="display: none;height: 275px;"></div>
+
+                <label class="btn newinfo" id="lesson-info" style="font-family: 'Helvetica', sans-serif;"
+                       for="modal-1"><i class="fa fa-bars" aria-hidden="true"></i>Информация</label>
+
+                <button class="btn checkbtn" onclick="compare()"><i class="fa fa-check-square-o"></i>CHECK</button>
+
+                <a class="btn next-level" id="next-level" href="second.html" style="pointer-events: none"><i
+                        class="fa fa-hand-o-right" aria-hidden="true"></i></a>
+
+                <button class="btn btn-default procent_result" id="result_button">0%</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно типа CheckBox для открытия/закрытия окна при вызове modal-1-->
+
+    <div class="modal">
+        <input class="modal-open" id="modal-1" type="checkbox" hidden>
+        <div class="modal-wrap" aria-hidden="true" role="dialog">
+            <label class="modal-overlay" for="modal-1"></label>
+            <div class="modal-dialog">
+                <div class="modal-header" style="text-align: center">
+                    <h2>Наш первый урок по изучению D3.js</h2>
+                    <label class="btn-close" for="modal-1" aria-hidden="true">×</label>
+                </div>
+                <div class="modal-body">
+                    <p>Если вы сейчас читаете это сообщение, значит решили отправится в увлекательное путешествие по чертогам <strike>разума</strike> D3.js.</p>
+                    <p>D3.js - это JavaScript-библиотека для обработки и визуализации данных.</p>
+                    <p>Она предоставляет удобные утилиты для обработки и загрузки массивов данных и создания DOM-элементов.</p>
+                    <p>В нашем примере с помощью D3.js мы создадим сетку маленьких разноцветных квадратов в блоке div.</p>
+                    <p>Но что-то он не показывается, наверное, мы где-то глупо опечатались. Выполните задание, а после этого можете поэкспериментировать со значением value. Указывайте от 1 до 10000</p>
+                    <p>Задание:Найдите 3 ошибки: 2 синтаксические и 1 опечатку. Наш редактор вам подскажет.</p>
+                </div>
+                <div class="modal-footer">
+                    <label class="btn btn-primary" for="modal-1">Отлично!</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Подключаем фреймворки-->
+    <!-- $ - вызов фреймворка jquery-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+    <!-- Преобразование HTML to canvas для сравнения-->
+    <script src="js/html2canvas.js"></script>
+
+    <!-- Библиотека для сравнения изображений-->
+    <script src="js/resemble.js"></script>
+    
+    <!-- Don't forget to download ace-builds folder-->
+    <script src="ace-builds/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+        var example_canvas;
+        var result_canvas;
+
+        var example_html =
+                '<html>\n' +
+                '<head>\n' +
+                '<title>Example</title>\n' +
+                '<style>\n' +
+                'body {\n' +
+                '\tfont: 10px sans-serif;\n' +
+                '}\n' +
+                '\n' +
+                'canvas {\n' +
+                '\tborder:  1px dotted #ccc;\n' +
+                '}\n' +
+                '\n' +
+                '.alert {\n' +
+                '\tcolor: tomato;\n' +
+                '}\n' +
+                '</style>\n' +
+                '</head>\n' +
+                '<body>\n' +
+                '\t<div id="container"></div>\n' +
+                '<script src="https://d3js.org/d3.v5.js"><\/script>\n' +
+                '</body>\n' +
+                '</html>';
+
+        var example_js =
+            'var width = 750,\n' +
+                'height = 400;\n' +
+                '\n' +
+                'var data = [];\n' +
+                'var value = 5000;\n' +
+                'var colourScale;\n' +
+                '\n' +
+                'var canvas = d3.select("#container")\n' +
+                '\t.append("canvas")\n' +
+                '\t.attr("width", width)\n' +
+                '\t.attr("height", height);\n' +
+                '\n' +
+                'var context = canvas.node().getContext("2d");\n' +
+
+                // === Load and prepare the data === //
+
+                'd3.range(value).forEach(function(el) {\n' +
+                '\tdata.push({ value: el });\n' +
+                '});\n' +
+                '\n' +
+                //'console.log(data);\n' +
+
+                // === Bind data to custom elements === //
+
+                'var customBase = document.createElement("custom");\n' +
+                'var custom = d3.select(customBase);\n' + // this is our svg replacement
+
+                // settings for a grid with 40 cells in a row and 2x5 cells in a group
+                'var groupSpacing = 4;\n' +
+                'var cellSpacing = 2;\n' +
+                'var cellSize = Math.floor((width - 11 * groupSpacing) / 100) - cellSpacing;\n' +
+
+                // === First call === //
+
+                'databind(data);\n' + // ...then update the databind function
+        
+                'var t = d3.timer(function(elapsed) {\n' +
+                    '\tdraw();\n' +
+                    '\tif (elapsed > 300) t.stop();\n' +
+                '});\n' + // start a timer that runs the draw function for 500 ms (this needs to be higher than the transition in the databind function)
+
+
+                // === Bind and draw functions === //
+
+                'function databind(data) {\n' +
+
+                    'colourScale = d3.scaleSequential(d3.interpolateSpectral).domain(d3.extent(data, function(d) { return d.value; }));\n' +
+
+                    'var join = custom.selectAll("custom.rect")\n' +
+                        '.data(data);\n' +
+
+                    'var enterSel = join.enter()\n' +
+                        '.append("custom")\n' +
+                        '.attr("class", "rect")\n' +
+                        '.attr("x", function(d, i) {\n' +
+                    'var x0 = Math.floor(i / 100) % 10, x1 = Math.floor(i % 10);\n' +
+                    'return groupSpacing * x0 + (cellSpacing + cellSize) * (x1 + x0 * 10);\n' +
+                '})\n' +
+                '.attr("y", function(d, i) {\n' +
+                    'var y0 = Math.floor(i / 1000), y1 = Math.floor(i % 100 / 10);\n' +
+                    'return groupSpacing * y0 + (cellSpacing + cellSize) * (y1 + y0 * 10);\n' +
+                '})\n' +
+                '\t.attr("width", 0)\n' +
+                '\t.attr("height", 0);\n' +
+
+                'join\n' +
+                    '\t.merge(enterSel)\n' +
+                    '\t.transition()\n' +
+                    '\t.attr("width", cellSize)\n' +
+                    '\t.attr("height", cellSize)\n' +
+                    '\t.attr("fillStyle", function(d) { return colourScale(d.value); });\n' +
+
+                'var exitSel = join.exit()\n' +
+                    '\t.transition()\n' +
+                    '\t.attr("width", 0)\n' +
+                    '\t.attr("height", 0)\n' +
+                    '\t.remove();\n' +
+
+                '}\n' + // databind()
+
+            // === Draw canvas === //
+
+            'function draw() {\n' +
+    
+                // clear canvas
+                
+                '\tcontext.fillStyle = "#fff";\n' +
+                '\tcontext.fillRect(0, 0, width, height);\n' +
+
+            
+                    // draw each individual custom element with their properties
+            
+                '\tvar elements = custom.selectAll("custom.rect")\n' + // this is the same as the join variable, but used here to draw
+            
+                '\telements.each(function(d,i) {\n' +
+
+                    // for each virtual/custom element...
+    
+                    '\tvar node = d3.select(this);\n' +
+                    '\tcontext.fillStyle = node.attr("fillStyle");\n' +
+                    '\tcontext.fillRect(node.attr("x"), node.attr("y"), node.attr("width"), node.attr("height"))\n' +
+
+                '});\n' +
+
+            '} // draw()';
+
+
+        var example_iframe = document.getElementById('example_iframe');
+//      Для разных браузеров
+        var in_example_iframe = example_iframe.contentDocument || example_iframe.contentWindow.document;
+
+        var result_iframe = document.getElementById('result_iframe');
+        var in_result_iframe = result_iframe.contentDocument || result_iframe.contentWindow.document;
+
+        in_example_iframe.open();
+        in_example_iframe.write(example_html + "<script>"  + example_js + "<\/script>");
+        in_example_iframe.close();
+
+        var js_editor = ace.edit("js_editor");
+        js_editor.setTheme("ace/theme/github");
+        js_editor.getSession().setMode("ace/mode/javascript");
+        js_editor.setValue(
+                'var width = 750,\n' +
+                'height = 400;\n' +
+                '\n' +
+                'var data = [];\n' +
+                'var value = 5000;\n' +
+                'var colourScale;\n' +
+                '\n' +
+                'var canvas = d3.select("#container")\n' +
+                '\t.append("canvas")\n' +
+                '\t.attr("width", width)\n' +
+                '\t.attr("height", height);\n' +
+                '\n' +
+                'var context = canvas.node().getContext("2d");\n' +
+
+                // === Load and prepare the data === //
+
+                'd3.range(value).forEach(function(el)ж {\n' +
+                '\tdata.push({ value: el });\n' +
+                '});\n' +
+                '\n' +
+                //'console.log(data);\n' +
+
+                // === Bind data to custom elements === //
+
+                'var customBase = document.createElement("custom");\n' +
+                'var custom = d3.select(customBase);\n' + // this is our svg replacement
+
+                // settings for a grid with 40 cells in a row and 2x5 cells in a group
+                'var groupSpacing = 4;\n' +
+                'var cellSpacing = 2;\n' +
+                'var cellSize = Math.floor((width - 11 * groupSpacing) / 100) - cellSpacing;\n' +
+
+                // === First call === //
+
+                'databind(data);\n' + // ...then update the databind function
+        
+                'var t = d3.timer(function(elapsed) {\n' +
+                    '\tdraw();\n' +
+                    '\tif (elapsed > 300) t.stop();\n' +
+                '});\n' + // start a timer that runs the draw function for 500 ms (this needs to be higher than the transition in the databind function)
+
+
+                // === Bind and draw functions === //
+
+                'function databind(data) {\n' +
+
+                    'colourScale = d3.scaleSequential(d3.interpolateSpectral).domain(d3.extent(data, function(d) { return d.value; }));\n' +
+
+                    'var join = custom.selectAll("custom.rect")\n' +
+                        '.data(data);\n' +
+
+                    'var enterSel = join.enter()\n' +
+                        '.append("custom")\n' +
+                        '.attr("class", "rect")\n' +
+                        '.attr("x", function(d, i) {\n' +
+                    'var x0 = Math.floor(i / 100) % 10, x1 = Math.floor(i % 10);\n' +
+                    'return groupSpacing * x0 + (cellSpacing + cellSize) * (x1 + x0 * 10);\n' +
+                '})\n' +
+                '.attr("y", function(d, i) {\n' +
+                    'var y0 = Math.floor(i / 1000), y1 = Math.floor(i % 100 / 10);\n' +
+                    'return groupSpacing * y0 + (cellSpacing + cellSize) * (y1 + y0 * 10);\n' +
+                '})\n' +
+                '\t.attr("width", 0)\n' +
+                '\t.attr("height", 0);\n' +
+
+                'join\n' +
+                    '\t.merge(enterSel)\n' +
+                    '\t.transition()\n' +
+                    '\t.attr("width", cellSize)\n' +
+                    '\t.attr("height", cellSize)\n' +
+                    '\t.attr("fillStyle", function(d) { return colourScale(d.value); });\n' +
+
+                'var exitSel = join.exit()\n' +
+                    '\t.transition()\n' +
+                    '\t.attr("width", 0)\n' +
+                    '\t.attr("height", 0)::\n' +
+                    '\t.rmove();\n' +
+
+                '}\n' + // databind()
+
+
+            // === Draw canvas === //
+
+            'function draw() {\n' +
+    
+                // clear canvas
+                
+                '\tcontext.fillStyle = "#fff";\n' +
+                '\tcontext.fillRect(0, 0, width, height);\n' +
+
+            
+                    // draw each individual custom element with their properties
+            
+                '\tvar elements = custom.selectAll("custom.rect")\n' + // this is the same as the join variable, but used here to draw
+            
+                '\telements.each(function(d,i) {\n' +
+
+                    // for each virtual/custom element...
+    
+                    '\tvar node = d3.select(this);\n' +
+                    '\tcontext.fillStyle = node.attr("fillStyle");\n' +
+                    '\tcontext.fillRect(node.attr("x"), node.attr("y"), node.attr("width"), node.attr("height"))\n' +
+
+                '});\n' +
+
+            '} // draw()\n'
+        );
+
+
+        in_result_iframe.open();
+        in_result_iframe.write(example_html + "<script>" + js_editor.getValue() + "<\/script>");
+        in_result_iframe.close();
+
+        js_editor.getSession().on('change', function () {
+            in_result_iframe.open();
+            in_result_iframe.write(example_html + "<script>" + js_editor.getValue() + "<\/script>");
+            in_result_iframe.close();
+        });
+
+
+        function compare() {
+            <!-- Iframe to Canvas-->
+            var element = document.querySelector("div#diff_div"); 
+			element.innerHTML = '';
+
+            html2canvas(in_example_iframe.body, {
+                onrendered: function (ex_canvas) {
+                    example_canvas = ex_canvas;
+                    html2canvas(in_result_iframe.body, {
+                        onrendered: function (res_canvas) {
+                            result_canvas = res_canvas;
+                            var example_string = example_canvas.toDataURL();
+                            var result_string = result_canvas.toDataURL();
+                            <!-- Compare 2 Iframes -->
+                            resemble(example_string).compareTo(result_string).onComplete(function (data) {
+                                document.getElementById('result_button').innerHTML = Math.floor(100 - data.rawMisMatchPercentage) + ' %';
+                                var image = new Image();
+                                image.src = data.getImageDataUrl();
+                                document.getElementById("diff_div").appendChild(image);
+                                if (data.rawMisMatchPercentage <= 15) {
+                                    set_cookie("finish_lesson-first", "true");
+                                    $("#next-level").css('pointer-events', 'auto');
+                                    $("#next-level").css('background-color', 'rgba(245,130,32,0.5');
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        function user_result() {
+            $(document).ready(function () {
+                $("#diff_div").css('display', 'none');
+                $("#result_iframe").css('display', 'block');
+            });
+        }
+        function show_diff() {
+            $(document).ready(function () {
+                $("#diff_div").css('display', 'block');
+                $("#result_iframe").css('display', 'none');
+            });
+        }
+    </script>
+    <script>
+        function set_cookie(name, value, exp_y, exp_m, exp_d, path, domain, secure) {
+            var cookie_string = name + "=" + escape(value);
+
+            if (exp_y) {
+                var expires = new Date(exp_y, exp_m, exp_d);
+                cookie_string += "; expires=" + expires.toGMTString();
+            }
+
+            if (path)
+                cookie_string += "; path=" + escape(path);
+
+            if (domain)
+                cookie_string += "; domain=" + escape(domain);
+
+            if (secure)
+                cookie_string += "; secure";
+
+            document.cookie = cookie_string;
+        }
+        function get_cookie(cookie_name) {
+            var results = document.cookie.match('(^|;) ?' + cookie_name + '=([^;]*)(;|$)');
+
+            if (results)
+                return ( unescape(results[2]) );
+            else
+                return null;
+        }
+    </script>
+    <script>
+        $(window).load(function () {
+            var first_open = get_cookie("open_modal-first");
+            var finish_lesson = get_cookie("finish_lesson-first");
+            if (first_open == null) {
+                setTimeout(function () {
+                    $('#lesson-info').trigger('click');
+                }, 100);
+                set_cookie("open_modal-first", "true");
+            }
+            console.log(finish_lesson);
+            if (finish_lesson) {
+                $("#next-level").css('pointer-events', 'auto');
+                $("#next-level").css('background-color', 'rgba(245,130,32,0.5');
+            }
+        });
+    </script>
+</div>
+</body>
+</html>
